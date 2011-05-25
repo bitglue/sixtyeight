@@ -1,3 +1,4 @@
+from __future__ import division
 from zope.interface import implements
 from twisted.web import client
 import csv, urllib, math
@@ -33,6 +34,15 @@ class Returns(object):
     def iterReturns(self):
         for date, ret in self.returns:
             yield ret
+
+    def minReturn(self):
+        return min(self.iterReturns())
+
+    def maxReturn(self):
+        return max(self.iterReturns())
+
+    def meanReturn(self):
+        return sum(self.iterReturns()) / len(self.returns)
 
 
 class YahooSource(object):

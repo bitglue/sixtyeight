@@ -1,3 +1,5 @@
+from __future__ import division
+
 from twisted.trial.unittest import TestCase
 from zope.interface.verify import verifyObject
 from twisted.python.util import sibpath
@@ -57,6 +59,18 @@ class TestReturns(TestCase):
             math.log(12.33/12.42),
             math.log(12.42/12.38),
        ])
+
+    def test_minReturn(self):
+        returns = quote.Returns(self.threeQuotes)
+        self.assertEqual(returns.minReturn(), math.log(12.33/12.42))
+
+    def test_maxReturn(self):
+        returns = quote.Returns(self.threeQuotes)
+        self.assertEqual(returns.maxReturn(), math.log(12.42/12.38))
+
+    def test_meanReturn(self):
+        returns = quote.Returns(self.threeQuotes)
+        self.assertEqual(returns.meanReturn(), (math.log(12.33/12.42) + math.log(12.42/12.38)) / 2)
 
 
 class TestYahooSource(TestCase):
