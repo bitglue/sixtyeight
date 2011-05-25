@@ -11,13 +11,25 @@ from sixtyeight import quote, isixtyeight
 
 class TestQuotes(TestCase):
     def setUp(self):
-        self._q = object()
+        self._q = [
+            ('2011-05-20', 12.33),
+            ('2011-05-19', 12.42),
+            ('2011-05-18', 12.38),
+        ]
         self.quotes = quote.Quotes('SYM', self._q)
 
     def test_interfaces(self):
         verifyObject(isixtyeight.IQuotes, self.quotes)
         self.assertEqual(self.quotes.quotes, self._q)
         self.assertEqual(self.quotes.symbol, 'SYM')
+
+    def test_findCommonDays(self):
+        otherQuotes = quote.Quotes('BOL', [self._q[1]])
+        q1, q2 = self.quotes.findCommonDays(otherQuotes)
+        self.assertEqual(q1.symbol, 'SYM')
+        self.assertEqual(q2.symbol, 'BOL')
+        for q in q1, q2:
+            self.assertEqual(q.quotes, [self._q[1]])
 
 
 class TestReturns(TestCase):

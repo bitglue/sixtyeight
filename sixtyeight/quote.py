@@ -14,6 +14,16 @@ class Quotes(object):
         self.symbol = symbol
         self.quotes = quotes
 
+    def findCommonDays(self, other):
+        myQuotes = dict(self.quotes)
+        myResults = []
+        otherResults = []
+        for d, q in other.quotes:
+            if d in myQuotes:
+                myResults.append((d, myQuotes[d]))
+                otherResults.append((d, q))
+        return Quotes(self.symbol, myResults), Quotes(other.symbol, otherResults)
+
 
 class Returns(object):
     implements(isixtyeight.IReturns)
