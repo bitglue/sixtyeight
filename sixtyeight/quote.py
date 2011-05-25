@@ -1,6 +1,6 @@
 from zope.interface import implements
 from twisted.web import client
-import csv, urllib
+import csv, urllib, math
 from cStringIO import StringIO
 
 from sixtyeight import isixtyeight
@@ -12,6 +12,23 @@ class Quotes(object):
     def __init__(self, symbol, quotes):
         self.symbol = symbol
         self.quotes = quotes
+
+
+class Returns(object):
+    implements(isixtyeight.IReturns)
+
+    def __init__(self, quotes):
+        self.symbol = quotes.symbol
+        self.returns = []
+
+        iterQuotes = iter(quotes.quotes)
+
+        for date, value in iterQuotes:
+            break
+
+        for prevDate, prevValue in iterQuotes:
+            self.returns.append((date, math.log(value/prevValue)))
+            date, value = prevDate, prevValue
 
 
 class YahooSource(object):

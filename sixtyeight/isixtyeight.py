@@ -1,7 +1,13 @@
 from zope.interface import Interface, Attribute
 
+
 class IQuotes(Interface):
     quotes = Attribute('a sequence of (date, value) pairs')
+    symbol = Attribute('the stock, fund symbol')
+
+
+class IReturns(Interface):
+    returns = Attribute('a sequence of (date, return) pairs')
     symbol = Attribute('the stock, fund symbol')
 
 

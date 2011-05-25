@@ -3,6 +3,7 @@ from zope.interface.verify import verifyObject
 from twisted.python.util import sibpath
 from twisted.web import client
 from twisted.internet import defer
+import math
 
 from sixtyeight import quote, isixtyeight
 
@@ -15,6 +16,39 @@ class TestQuotes(TestCase):
         verifyObject(isixtyeight.IQuotes, self.quotes)
         self.assertEqual(self.quotes.quotes, self._q)
         self.assertEqual(self.quotes.symbol, 'SYM')
+
+
+class TestReturns(TestCase):
+    symbol = 'SYM'
+
+    def test_usual(self):
+        quotes = quote.Quotes(self.symbol, [
+            ('2011-05-20', 12.33),
+            ('2011-05-19', 12.42),
+            ('2011-05-18', 12.38),
+        ])
+
+        returns = quote.Returns(quotes)
+
+        verifyObject(isixtyeight.IReturns, returns)
+        self.assertEqual(returns.symbol, self.symbol)
+
+        self.assertEqual(returns.returns, [
+            ('2011-05-20', math.log(12.33/12.42)),
+            ('2011-05-19', math.log(12.42/12.38)),
+        ])
+
+    def test_noQuote(self):
+        quotes = quote.Quotes(self.symbol, [])
+        returns = quote.Returns(quotes)
+        self.assertEqual(returns.returns, [])
+
+    def test_oneQuote(self):
+        quotes = quote.Quotes(self.symbol, [
+            ('2011-05-18', 12.38),
+        ])
+        returns = quote.Returns(quotes)
+        self.assertEqual(returns.returns, [])
 
 
 class TestYahooSource(TestCase):
@@ -42,6 +76,10 @@ class TestYahooSource(TestCase):
         d = self.source.getQuotes(self.symbol).addCallback(result.append)
         quotes, = result
         verifyObject(isixtyeight.IQuotes, quotes)
-        self.assertEqual(quotes.quotes, [('2011-05-20', 12.33), ('2011-05-19', 12.42), ('2011-05-18', 12.38)])
+        self.assertEqual(quotes.quotes, [
+            ('2011-05-20', 12.33),
+            ('2011-05-19', 12.42),
+            ('2011-05-18', 12.38),
+        ])
         self.assertEqual(quotes.symbol, self.symbol)
         return d
