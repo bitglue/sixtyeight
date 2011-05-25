@@ -14,16 +14,6 @@ class Quotes(object):
         self.symbol = symbol
         self.quotes = quotes
 
-    def findCommonDays(self, other):
-        myQuotes = dict(self.quotes)
-        myResults = []
-        otherResults = []
-        for d, q in other.quotes:
-            if d in myQuotes:
-                myResults.append((d, myQuotes[d]))
-                otherResults.append((d, q))
-        return Quotes(self.symbol, myResults), Quotes(other.symbol, otherResults)
-
 
 class Returns(object):
     implements(isixtyeight.IReturns)
@@ -69,3 +59,21 @@ class YahooSource(object):
         r = csv.DictReader(StringIO(quoteData))
         quotes = [(row['Date'], float(row['Adj Close'])) for row in r]
         return Quotes(symbol, quotes)
+
+
+class ComparisonWindow(object):
+    implements(isixtyeight.IComparisonWindow)
+
+    def __init__(self, xQuotes, yQuotes):
+        self.xQuotes, self.yQuotes = self._findCommonDays(xQuotes, yQuotes)
+
+    @staticmethod
+    def _findCommonDays(self, other):
+        myQuotes = dict(self.quotes)
+        myResults = []
+        otherResults = []
+        for d, q in other.quotes:
+            if d in myQuotes:
+                myResults.append((d, myQuotes[d]))
+                otherResults.append((d, q))
+        return Quotes(self.symbol, myResults), Quotes(other.symbol, otherResults)
