@@ -20,15 +20,14 @@ class TestQuotes(TestCase):
 
 class TestReturns(TestCase):
     symbol = 'SYM'
+    threeQuotes = quote.Quotes(symbol, [
+        ('2011-05-20', 12.33),
+        ('2011-05-19', 12.42),
+        ('2011-05-18', 12.38),
+    ])
 
     def test_usual(self):
-        quotes = quote.Quotes(self.symbol, [
-            ('2011-05-20', 12.33),
-            ('2011-05-19', 12.42),
-            ('2011-05-18', 12.38),
-        ])
-
-        returns = quote.Returns(quotes)
+        returns = quote.Returns(self.threeQuotes)
 
         verifyObject(isixtyeight.IReturns, returns)
         self.assertEqual(returns.symbol, self.symbol)
@@ -49,6 +48,15 @@ class TestReturns(TestCase):
         ])
         returns = quote.Returns(quotes)
         self.assertEqual(returns.returns, [])
+
+    def test_iterReturns(self):
+        returns = quote.Returns(self.threeQuotes)
+        i = returns.iterReturns()
+        self.assertEqual(i, iter(i))
+        self.assertEqual(list(i), [
+            math.log(12.33/12.42),
+            math.log(12.42/12.38),
+       ])
 
 
 class TestYahooSource(TestCase):

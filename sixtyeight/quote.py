@@ -30,6 +30,10 @@ class Returns(object):
             self.returns.append((date, math.log(value/prevValue)))
             date, value = prevDate, prevValue
 
+    def iterReturns(self):
+        for date, ret in self.returns:
+            yield ret
+
 
 class YahooSource(object):
     implements(isixtyeight.IQuoteSource)
