@@ -2,6 +2,10 @@ from zope.interface import Interface, Attribute
 
 
 class IQuotes(Interface):
+    '''Stores the value of a thing at specified points in time.
+
+    The data are stored in chronological order, oldest first.
+    '''
     values = Attribute('a sequence of floats')
     dates = Attribute('a sequence of datetime.date instances')
     symbol = Attribute('the stock, fund symbol')

@@ -12,8 +12,8 @@ import math
 
 from sixtyeight import quote, isixtyeight
 
-_threeDates = [date(2011, 05, 20), date(2011, 05, 19), date(2011, 05, 18)]
-_threeValues = [12.33, 12.42, 12.38]
+_threeDates = [date(2011, 05, 18), date(2011, 05, 19), date(2011, 05, 20)]
+_threeValues = [12.38, 12.42, 12.33]
 
 class TestQuotes(TestCase):
     def setUp(self):
@@ -55,8 +55,8 @@ class TestReturns(TestCase):
         verifyObject(isixtyeight.IReturns, returns)
         self.assertEqual(returns.symbol, self.symbol)
 
-        self.assertEqual(returns.returns, [math.log(12.33/12.42), math.log(12.42/12.38)])
-        self.assertEqual(returns.dates, [date(2011, 05, 20), date(2011, 05, 19)])
+        self.assertEqual(returns.returns, [math.log(12.42/12.38), math.log(12.33/12.42)])
+        self.assertEqual(returns.dates, [date(2011, 05, 19), date(2011, 05, 20)])
 
     def test_noQuote(self):
         quotes = quote.Quotes(self.symbol, [], [])

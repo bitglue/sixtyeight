@@ -31,13 +31,13 @@ class Returns(object):
 
         iterDV = quotes.iterDateValues()
 
-        for date, value in iterDV:
+        for prevDate, prevValue in iterDV:
             break
 
-        for prevDate, prevValue in iterDV:
+        for date, value in iterDV:
             self.dates.append(date)
             self.returns.append(math.log(value/prevValue))
-            date, value = prevDate, prevValue
+            prevDate, prevValue = date, value
 
     def minReturn(self):
         return min(self.returns)
@@ -68,6 +68,9 @@ class YahooSource(object):
             for row in csv.DictReader(StringIO(quoteData)):
                 dates.append(parseDate(row['Date']))
                 values.append(float(row['Adj Close']))
+
+            dates.reverse()
+            values.reverse()
             return Quotes(symbol, dates, values)
         except:
             import traceback
