@@ -2,7 +2,7 @@ from __future__ import division
 from zope.interface import implements
 from twisted.python import components
 from twisted.web import client
-import csv, urllib, math
+import csv, urllib, math, datetime
 from cStringIO import StringIO
 
 from sixtyeight import isixtyeight
@@ -58,7 +58,9 @@ class YahooSource(object):
 
     def _cbParseQuotes(self, quoteData, symbol):
         r = csv.DictReader(StringIO(quoteData))
-        quotes = [(row['Date'], float(row['Adj Close'])) for row in r]
+        def parseDate(d):
+            return datetime.date(*map(int, d.split('-')))
+        quotes = [(parseDate(row['Date']), float(row['Adj Close'])) for row in r]
         return Quotes(symbol, quotes)
 
 
