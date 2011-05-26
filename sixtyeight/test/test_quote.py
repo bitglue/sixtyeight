@@ -1,6 +1,7 @@
 from __future__ import division
 
 from twisted.trial.unittest import TestCase
+from zope.interface import implements
 from zope.interface.verify import verifyObject
 from twisted.python.util import sibpath
 from twisted.web import client
@@ -22,6 +23,21 @@ class TestQuotes(TestCase):
         verifyObject(isixtyeight.IQuotes, self.quotes)
         self.assertEqual(self.quotes.quotes, self._q)
         self.assertEqual(self.quotes.symbol, 'SYM')
+
+
+class TestAdaptation(TestCase):
+    def test_IQuotes_to_IReturns(self):
+        class Q(object):
+            implements(isixtyeight.IQuotes)
+            quotes = [
+                ('2011-05-20', 12.33),
+                ('2011-05-19', 12.42),
+                ('2011-05-18', 12.38),
+            ]
+            symbol = 'SYMBOL'
+        quotes = Q()
+        verifyObject(isixtyeight.IQuotes, quotes)
+        verifyObject(isixtyeight.IReturns, isixtyeight.IReturns(quotes))
 
 
 class TestReturns(TestCase):

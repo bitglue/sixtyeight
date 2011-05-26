@@ -1,5 +1,6 @@
 from __future__ import division
 from zope.interface import implements
+from twisted.python import components
 from twisted.web import client
 import csv, urllib, math
 from cStringIO import StringIO
@@ -77,3 +78,6 @@ class ComparisonWindow(object):
                 myResults.append((d, myQuotes[d]))
                 otherResults.append((d, q))
         return Quotes(self.symbol, myResults), Quotes(other.symbol, otherResults)
+
+
+components.registerAdapter(Returns, isixtyeight.IQuotes, isixtyeight.IReturns)
