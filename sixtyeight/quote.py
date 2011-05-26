@@ -1,4 +1,5 @@
 from __future__ import division
+from itertools import izip
 from zope.interface import implements
 from twisted.python import components
 from twisted.web import client
@@ -11,9 +12,13 @@ from sixtyeight import isixtyeight
 class Quotes(object):
     implements(isixtyeight.IQuotes)
 
-    def __init__(self, symbol, quotes):
+    def __init__(self, symbol, dates, values):
         self.symbol = symbol
-        self.quotes = quotes
+        self.dates = dates
+        self.values = values
+
+    def iterDateValues(self):
+        return izip(self.dates, self.values)
 
 
 class Returns(object):
@@ -21,29 +26,27 @@ class Returns(object):
 
     def __init__(self, quotes):
         self.symbol = quotes.symbol
+        self.dates = []
         self.returns = []
 
-        iterQuotes = iter(quotes.quotes)
+        iterDV = quotes.iterDateValues()
 
-        for date, value in iterQuotes:
+        for date, value in iterDV:
             break
 
-        for prevDate, prevValue in iterQuotes:
-            self.returns.append((date, math.log(value/prevValue)))
+        for prevDate, prevValue in iterDV:
+            self.dates.append(date)
+            self.returns.append(math.log(value/prevValue))
             date, value = prevDate, prevValue
 
-    def iterReturns(self):
-        for date, ret in self.returns:
-            yield ret
-
     def minReturn(self):
-        return min(self.iterReturns())
+        return min(self.returns)
 
     def maxReturn(self):
-        return max(self.iterReturns())
+        return max(self.returns)
 
     def meanReturn(self):
-        return sum(self.iterReturns()) / len(self.returns)
+        return sum(self.returns) / len(self.returns)
 
 
 class YahooSource(object):
@@ -57,29 +60,38 @@ class YahooSource(object):
         return self.getPage(url).addCallback(self._cbParseQuotes, symbol)
 
     def _cbParseQuotes(self, quoteData, symbol):
-        r = csv.DictReader(StringIO(quoteData))
-        def parseDate(d):
-            return datetime.date(*map(int, d.split('-')))
-        quotes = [(parseDate(row['Date']), float(row['Adj Close'])) for row in r]
-        return Quotes(symbol, quotes)
+        try:
+            def parseDate(d):
+                return datetime.date(*map(int, d.split('-')))
+            dates = []
+            values = []
+            for row in csv.DictReader(StringIO(quoteData)):
+                dates.append(parseDate(row['Date']))
+                values.append(float(row['Adj Close']))
+            return Quotes(symbol, dates, values)
+        except:
+            import traceback
+            traceback.print_exc()
 
 
 class ComparisonWindow(object):
     implements(isixtyeight.IComparisonWindow)
 
     def __init__(self, xQuotes, yQuotes):
-        self.xQuotes, self.yQuotes = self._findCommonDays(xQuotes, yQuotes)
+        self.dates, self.xQuotes, self.yQuotes = self._findCommonDays(xQuotes, yQuotes)
 
     @staticmethod
     def _findCommonDays(self, other):
-        myQuotes = dict(self.quotes)
+        myQuotes = dict(self.iterDateValues())
         myResults = []
         otherResults = []
-        for d, q in other.quotes:
+        dates = []
+        for d, q in other.iterDateValues():
             if d in myQuotes:
-                myResults.append((d, myQuotes[d]))
-                otherResults.append((d, q))
-        return Quotes(self.symbol, myResults), Quotes(other.symbol, otherResults)
+                dates.append(d)
+                myResults.append(myQuotes[d])
+                otherResults.append(q)
+        return dates, Quotes(self.symbol, dates, myResults), Quotes(other.symbol, dates, otherResults)
 
 
 components.registerAdapter(Returns, isixtyeight.IQuotes, isixtyeight.IReturns)

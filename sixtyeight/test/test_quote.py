@@ -6,36 +6,40 @@ from zope.interface.verify import verifyObject
 from twisted.python.util import sibpath
 from twisted.web import client
 from twisted.internet import defer
+from itertools import izip
 from datetime import date
 import math
 
 from sixtyeight import quote, isixtyeight
 
+_threeDates = [date(2011, 05, 20), date(2011, 05, 19), date(2011, 05, 18)]
+_threeValues = [12.33, 12.42, 12.38]
+
 class TestQuotes(TestCase):
     def setUp(self):
-        self._q = [
-            (date(2011, 05, 20), 12.33),
-            (date(2011, 05, 19), 12.42),
-            (date(2011, 05, 18), 12.38),
-        ]
-        self.quotes = quote.Quotes('SYM', self._q)
+        self.dates = _threeDates
+        self.values = _threeValues
+        self.quotes = quote.Quotes('SYM', self.dates, self.values)
 
     def test_interfaces(self):
         verifyObject(isixtyeight.IQuotes, self.quotes)
-        self.assertEqual(self.quotes.quotes, self._q)
+        self.assertEqual(self.quotes.dates, self.dates)
+        self.assertEqual(self.quotes.values, self.values)
         self.assertEqual(self.quotes.symbol, 'SYM')
+
+    def test_iterDateValues(self):
+        self.assertEqual(list(self.quotes.iterDateValues()), zip(self.dates, self.values))
 
 
 class TestAdaptation(TestCase):
     def test_IQuotes_to_IReturns(self):
         class Q(object):
             implements(isixtyeight.IQuotes)
-            quotes = [
-                (date(2011, 05, 20), 12.33),
-                (date(2011, 05, 19), 12.42),
-                (date(2011, 05, 18), 12.38),
-            ]
+            dates = _threeDates
+            values = _threeValues
             symbol = 'SYMBOL'
+            def iterDateValues(self):
+                return izip(self.dates, self.values)
         quotes = Q()
         verifyObject(isixtyeight.IQuotes, quotes)
         verifyObject(isixtyeight.IReturns, isixtyeight.IReturns(quotes))
@@ -43,11 +47,7 @@ class TestAdaptation(TestCase):
 
 class TestReturns(TestCase):
     symbol = 'SYM'
-    threeQuotes = quote.Quotes(symbol, [
-        (date(2011, 05, 20), 12.33),
-        (date(2011, 05, 19), 12.42),
-        (date(2011, 05, 18), 12.38),
-    ])
+    threeQuotes = quote.Quotes(symbol, _threeDates, _threeValues)
 
     def test_usual(self):
         returns = quote.Returns(self.threeQuotes)
@@ -55,31 +55,18 @@ class TestReturns(TestCase):
         verifyObject(isixtyeight.IReturns, returns)
         self.assertEqual(returns.symbol, self.symbol)
 
-        self.assertEqual(returns.returns, [
-            (date(2011, 05, 20), math.log(12.33/12.42)),
-            (date(2011, 05, 19), math.log(12.42/12.38)),
-        ])
+        self.assertEqual(returns.returns, [math.log(12.33/12.42), math.log(12.42/12.38)])
+        self.assertEqual(returns.dates, [date(2011, 05, 20), date(2011, 05, 19)])
 
     def test_noQuote(self):
-        quotes = quote.Quotes(self.symbol, [])
+        quotes = quote.Quotes(self.symbol, [], [])
         returns = quote.Returns(quotes)
         self.assertEqual(returns.returns, [])
 
     def test_oneQuote(self):
-        quotes = quote.Quotes(self.symbol, [
-            (date(2011, 05, 18), 12.38),
-        ])
+        quotes = quote.Quotes(self.symbol, [date(2011, 05, 18)], [12.38])
         returns = quote.Returns(quotes)
         self.assertEqual(returns.returns, [])
-
-    def test_iterReturns(self):
-        returns = quote.Returns(self.threeQuotes)
-        i = returns.iterReturns()
-        self.assertEqual(i, iter(i))
-        self.assertEqual(list(i), [
-            math.log(12.33/12.42),
-            math.log(12.42/12.38),
-       ])
 
     def test_minReturn(self):
         returns = quote.Returns(self.threeQuotes)
@@ -119,27 +106,16 @@ class TestYahooSource(TestCase):
         d = self.source.getQuotes(self.symbol).addCallback(result.append)
         quotes, = result
         verifyObject(isixtyeight.IQuotes, quotes)
-        self.assertEqual(quotes.quotes, [
-            (date(2011, 05, 20), 12.33),
-            (date(2011, 05, 19), 12.42),
-            (date(2011, 05, 18), 12.38),
-        ])
+        self.assertEqual(quotes.dates, _threeDates)
+        self.assertEqual(quotes.values, _threeValues)
         self.assertEqual(quotes.symbol, self.symbol)
         return d
 
 
 class TestComparisonWindow(TestCase):
     def setUp(self):
-        self._q1 = [
-            (date(2011, 05, 20), 12.33),
-            (date(2011, 05, 19), 12.42),
-            (date(2011, 05, 18), 12.38),
-        ]
-        self.q1 = quote.Quotes('SYM', self._q1)
-        self._q2 = [
-            (date(2011, 05, 19), 13.55),
-        ]
-        self.q2 = quote.Quotes('BOL', self._q2)
+        self.q1 = quote.Quotes('SYM', _threeDates, _threeValues)
+        self.q2 = quote.Quotes('BOL', [_threeDates[1]], [13.55])
 
         self.window = quote.ComparisonWindow(self.q1, self.q2)
 
@@ -151,5 +127,9 @@ class TestComparisonWindow(TestCase):
         self.assertEqual(self.window.yQuotes.symbol, 'BOL')
 
     def test_commonDates(self):
-        self.assertEqual(self.window.xQuotes.quotes, [self._q1[1]])
-        self.assertEqual(self.window.yQuotes.quotes, self._q2)
+        self.assertEqual(self.window.dates, [_threeDates[1]])
+        self.assertEqual(self.window.dates, self.window.xQuotes.dates)
+        self.assertEqual(self.window.dates, self.window.yQuotes.dates)
+
+        self.assertEqual(self.window.xQuotes.values, [_threeValues[1]])
+        self.assertEqual(self.window.yQuotes.values, [13.55])

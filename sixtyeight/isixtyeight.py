@@ -2,16 +2,18 @@ from zope.interface import Interface, Attribute
 
 
 class IQuotes(Interface):
-    quotes = Attribute('a sequence of (date, value) pairs')
+    values = Attribute('a sequence of floats')
+    dates = Attribute('a sequence of datetime.date instances')
     symbol = Attribute('the stock, fund symbol')
+
+    def iterDateValues():
+        '''Return an iterator over (date, value) pairs.'''
 
 
 class IReturns(Interface):
-    returns = Attribute('a sequence of (date, return) pairs')
+    returns = Attribute('a sequence of floats')
+    dates = Attribute('a sequence of datetime.date instances')
     symbol = Attribute('the stock, fund symbol')
-
-    def iterReturns():
-        '''Return an iterator over just the returns (no date)'''
 
     def minReturn():
         '''Return the smallest single return'''
@@ -38,3 +40,4 @@ class IComparisonWindow(Interface):
     '''
     xQuotes = Attribute('provides IQuotes, with the same set of dates as yQuotes')
     yQuotes = Attribute('provides IQuotes, with the same set of dates as xQuotes')
+    dates = Attribute('a sequence of datetime.date instances. These will be the same dates as in xQuotes and yQuotes.')
